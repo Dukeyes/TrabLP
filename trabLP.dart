@@ -1,69 +1,11 @@
-class Docente{
-  int codigo;
-  String nome, dataNascimento, dataIngresso; //data = dd/mm/aaaa
-  bool coordenador; //X = true
-  
-  Docente(this.codigo,this.nome,this.dataNascimento,this.dataIngresso,coordenador){
-    if(coordenador=="X")
-      this.coordenador = true;
-    else
-      this.coordenador = false;
-  }
-  
-  @override
-  String toString(){
-    return "codigo: $codigo, nome: $nome, dataNascimento: $dataNascimento, dataIngesso: $dataIngresso, coordenador: $coordenador";
-  }
-}
-class Veiculo{
-  String sigla, nome, tipo, issn; //tipo: "C ou P"
-  double fatorImpacto;
-  
-  Veiculo(this.sigla,this.nome,this.tipo,this.issn,this.fatorImpacto);
-  
-  @override
-  String toString(){
-    return "sigla: $sigla, nome: $nome, tipo: $tipo, issn: $issn, fatorImpacto: $fatorImpacto";
-  }
-}
-class Publicacao{
-  int ano,numero,volume,paginas;
-  String sigla,titulo,local;
-  List<int> listaAutores; //int = codigo do docente
-  
-  Publicacao(this.ano,this.numero,this.volume,this.paginas,this.sigla,this.titulo,this.local,this.listaAutores);
-  
-  @override
-  String toString(){
-    return "ano: $ano, numero: $numero, volume: $volume, paginas: $paginas, sigla: $sigla, titulo: $titulo, local: $local, listaAutores: $listaAutores";
-  }
-}
-class Qualificacao{
-  int ano;
-  String sigla;
-  Map<String,int> qualis;//qualis pode ser "A1,A2,B1,B2,B3,B4,B5,C" => chaves
-  
-  Qualificacao(this.ano,this.sigla,this.qualis);
-  
-  @override
-  String toString(){
-    return "ano: $ano, sigla: $sigla, qualis: $qualis";
-  }
-}
-class RegrasDePontuacao{
-  String dataInicio,dataFim;
-  List<String> listaQualis;
-  List<int> listaPontos;
-  double multiplicador;
-  int qntAnos, pontuacaoMinima;
-  
-  RegrasDePontuacao(this.dataInicio,this.dataFim,this.listaQualis,this.listaPontos,this.multiplicador,this.qntAnos,this.pontuacaoMinima);
-  
-  @override
-  String toString(){
-    return "dataInicio: $dataInicio, dataFim: $dataFim, listaQualis: $listaQualis, listaPontos: $listaPontos, multiplicador: $multiplicador, qntAnos: $qntAnos, pontuacaoMinima: $pontuacaoMinima";
-  }
-}
+import 'Docente.dart';
+import 'Veiculo.dart';
+import 'Publicacao.dart';
+import 'Qualificacao.dart';
+import 'RegrasDePontuacao.dart';
+import 'dart:async';
+import 'dart:io';
+import 'dart:convert';
 
 class ListaDePublicacoes{
   int ano;
@@ -78,14 +20,46 @@ class EstatisticasDePublicacoes{
   Qualificacao qualis;
   int numeroDeArtigos,numeroDeArtigosPorDocentes;
 }
-void main(){
+
+List<T> le<T>(String arquivo, String type){
+  List<T> lt = new List<T>();
+  File file = new File(arquivo);
+  List<String> ls = file.readAsLinesSync();
+  for (var i = 1; i < ls.length; i++) {
+    List<String> element = ls[i].split(';');
+    var t;
+    if (type == "d") t = new Docente.fromDocente(element);
+    if (type == "v") t = new Veiculo.fromVeiculo(element);
+    if (type == "p") t = new Publicacao.fromPublicacao(element);
+    if (type == "q") t = new Qualificacao.fromQualificacao(element);
+    //if (type == "r") t = new RegrasDePontuaca
+    //print(d);
+    lt.add(t);
+  }
+  return lt;
+}
+
+void main(List<String> args){
+  
   List<Docente> docentes = new List<Docente>();
   List<Veiculo> veiculos = new List<Veiculo>();
   List<Publicacao> publicacoes = new List<Publicacao>();
   List<Qualificacao> qualificacoes = new List<Qualificacao>();
   List<RegrasDePontuacao> regrasDePontuacao = new List<RegrasDePontuacao>();
-  
-  //List<dynamic> planDoc = [3,"nomeDocente","03/12/1990","01/10/1980","X"];
+  int anoRecredenciamento;
+  //print(args);
+  for (var i = 0; i < args.length; i+=2) {
+    if (args[i] == "-d") docentes = le<Docente>(args[i+1], "d");
+    if (args[i] == "-v") veiculos = le<Veiculo>(args[i+1], "v");
+    if (args[i] == "-p") publicacoes = le<Publicacao>(args[i+1], "p");
+    if (args[i] == "-v") qualificacoes = le<Qualificacao>(args[i+1], "q");
+    if (args[i] == "-r") regrasDePontuacao = le<RegrasDePontuacao>(args[i+1], "r");
+    if (args[i] == "-a") anoRecredenciamento = int.parse(args[i+1]);
+  }
+  print(publicacoes);
+  // print(docentes);
+  //print(veiculos);
+  // List<dynamic> planDoc = [3,"nomeDocente","03/12/1990","01/10/1980","X"];
   //List<dynamic> planVei = ["siglaVeiculo","nomeVeiculo","C","issn",1.20];
   //List<dynamic> planPub = [1970,1,"siglaVeiculo","titulo",listaCodigos,1,2,"local",10,20];
   //List<dynamic> planQua = [1970,"siglaVeiculo",listaPontos];
@@ -97,24 +71,24 @@ void main(){
   List<String> listaQualis = ["A1","B2","B4","C"]; //qualis relacionados aos pontos acima
   Map<String,int> mapaQualis = fazerMapa(listaQualis,listaPontos); //mapa com o valor de cada qualis
   //-----------------------------------como se fosse 1 linha do arquivo
-  Docente doc = Docente(1,"nomeDocente1","03/12/1990","01/10/1980","X");
-  Docente doc1 = Docente(2,"nomeDocente2","03/12/1990","01/10/1980","X");
-  Docente doc2 = Docente(3,"nomeDocente3","03/12/1990","01/10/1980","X");
-  Docente doc3 = Docente(10,"nomeDocente10","03/12/1990","01/10/1980","X");
-  docentes.add(doc);
-  docentes.add(doc1);
-  docentes.add(doc2);
-  docentes.add(doc3);
+  // Docente doc = Docente(1,"nomeDocente1","03/12/1990","01/10/1980","X");
+  // Docente doc1 = Docente(2,"nomeDocente2","03/12/1990","01/10/1980","X");
+  // Docente doc2 = Docente(3,"nomeDocente3","03/12/1990","01/10/1980","X");
+  // Docente doc3 = Docente(10,"nomeDocente10","03/12/1990","01/10/1980","X");
+  // docentes.add(doc);
+  // docentes.add(doc1);
+  // docentes.add(doc2);
+  // docentes.add(doc3);
   //print("Docentes: \n$doc");
   //-----------------------------------como se fosse 1 linha do arquivo
-  Veiculo vei = Veiculo("siglaVeiculo","nomeVeiculo","C","issn",1.20);
-  veiculos.add(vei);
+  // Veiculo vei = Veiculo("siglaVeiculo","nomeVeiculo","C","issn",1.20);
+  // veiculos.add(vei);
   //print("Veiculos: \n$vei");
   //-----------------------------------como se fosse 1 linha do arquivo
-  Publicacao pub = Publicacao(1970,1,2,3,"siglaVeiculo","titulo","local",listaCodigos);
-  Publicacao pub1 = Publicacao(1970,1,2,3,"siglaVeiculo","titulo","local",listaCodigos);
-  publicacoes.add(pub);
-  publicacoes.add(pub1);
+  // Publicacao pub = Publicacao(1970,1,2,3,"siglaVeiculo","titulo","local",listaCodigos);
+  // Publicacao pub1 = Publicacao(1970,1,2,3,"siglaVeiculo","titulo","local",listaCodigos);
+  // publicacoes.add(pub);
+  // publicacoes.add(pub1);
   //print("Publicacoes: \n$pub");
   //-----------------------------------como se fosse 1 linha do arquivo
   Qualificacao qua = Qualificacao(1970,"siglaVeiculo",mapaQualis);
@@ -128,7 +102,7 @@ void main(){
   
   //2 arquivos precisam ser gerados
   //lista de publicacoes SEM ordernar
-  relatorioListaDePublicacoes(docentes, veiculos, publicacoes, qualificacoes);
+  //relatorioListaDePublicacoes(docentes, veiculos, publicacoes, qualificacoes);
   //estatisticas de publicacoes SEM ordenar
   
   
