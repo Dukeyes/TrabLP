@@ -1,4 +1,4 @@
-class Publicacao{
+class Publicacao {
   int ano,numero,volume,paginaInicial, paginaFinal;
   String sigla,titulo,local;
   List<int> listaAutores; //int = codigo do docente
@@ -12,7 +12,9 @@ class Publicacao{
     this.titulo = pub[2];
     this.listaAutores = codigos;
     this.numero = int.parse(pub[4]);
-    this.volume = int.parse(pub[5]); // falha para o teste 1 pois n tem volume, alterar o arquivo quando for testar
+    //print(pub[5]);
+    if (pub[5] != "")
+      this.volume = int.parse(pub[5]); // falha para o teste 1 pois n tem volume, alterar o arquivo quando for testar
     this.local = pub[6];
     this.paginaInicial = int.parse(pub[7]);
     this.paginaFinal = int.parse(pub[8]);
@@ -20,5 +22,9 @@ class Publicacao{
   @override
   String toString(){
     return "ano: $ano, numero: $numero, volume: $volume, pagina inicial: $paginaInicial, pagina final: $paginaFinal, sigla: $sigla, titulo: $titulo, local: $local, listaAutores: $listaAutores";
+  }
+  
+  int compare(Publicacao other){
+    return this.local.compareTo(other.local);
   }
 }

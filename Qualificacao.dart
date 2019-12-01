@@ -8,6 +8,7 @@ class Qualificacao{
   Qualificacao.fromQualificacao(List<String> qua){
     this.ano = int.parse(qua[0]);
     this.sigla = qua[1];
+    if (qua[2] == "") qua[2] = "A1";
     this.qualis = qua[2];
   }
   @override

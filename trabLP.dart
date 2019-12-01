@@ -7,6 +7,11 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 
+
+Map<int, Docente> mapaDocentes = new Map();
+Map<String, Veiculo> mapaVeiculos = new Map();
+Map<String, List<Qualificacao>> mapaVeiculoQualis = new Map();
+
 class ListaDePublicacoes{
   int ano;
   String siglaVeiculo,nomeVeiculo,tituloPublicacao;
@@ -32,11 +37,41 @@ List<T> le<T>(String arquivo, String type){
     if (type == "v") t = new Veiculo.fromVeiculo(element);
     if (type == "p") t = new Publicacao.fromPublicacao(element);
     if (type == "q") t = new Qualificacao.fromQualificacao(element);
-    //if (type == "r") t = new RegrasDePontuaca
+    if (type == "r") t = new RegrasDePontuacao.fromRegras(element);
     //print(d);
     lt.add(t);
   }
   return lt;
+}
+
+
+
+typedef Comparator<T> = int Function(T a, T b);
+
+int comparaPublicacao(Publicacao a, Publicacao b){
+  //print(a.sigla);
+  //print(mapaVeiculoQualis[a.sigla]);
+  String qualisA, qualisB;
+  //print(a.sigla); print(b.sigla);
+  for(var i = 0; i < mapaVeiculoQualis[a.sigla].length; ++i){
+    if (mapaVeiculoQualis[a.sigla][i].ano == a.ano)
+      qualisA = mapaVeiculoQualis[a.sigla][i].qualis;
+  }
+  for(var i = 0; i < mapaVeiculoQualis[b.sigla].length; ++i){
+    if (mapaVeiculoQualis[b.sigla][i].ano == b.ano)
+      qualisB = mapaVeiculoQualis[b.sigla][i].qualis;
+  }
+  
+  int res = qualisA.compareTo(qualisB);
+  if (res == 0){
+    if (a.ano.compareTo(b.ano) == 0){
+      if (a.sigla.compareTo(b.sigla) == 0)
+        return a.titulo.compareTo(b.titulo);
+      return a.sigla.compareTo(b.sigla);
+    }
+    return -a.ano.compareTo(b.ano);
+  }
+  return res; 
 }
 
 void main(List<String> args){
@@ -46,141 +81,52 @@ void main(List<String> args){
   List<Publicacao> publicacoes = new List<Publicacao>();
   List<Qualificacao> qualificacoes = new List<Qualificacao>();
   List<RegrasDePontuacao> regrasDePontuacao = new List<RegrasDePontuacao>();
+  
   int anoRecredenciamento;
   //print(args);
   for (var i = 0; i < args.length; i+=2) {
     if (args[i] == "-d") docentes = le<Docente>(args[i+1], "d");
     if (args[i] == "-v") veiculos = le<Veiculo>(args[i+1], "v");
     if (args[i] == "-p") publicacoes = le<Publicacao>(args[i+1], "p");
-    if (args[i] == "-v") qualificacoes = le<Qualificacao>(args[i+1], "q");
+    if (args[i] == "-q") qualificacoes = le<Qualificacao>(args[i+1], "q");
     if (args[i] == "-r") regrasDePontuacao = le<RegrasDePontuacao>(args[i+1], "r");
     if (args[i] == "-a") anoRecredenciamento = int.parse(args[i+1]);
   }
-  print(publicacoes);
+  //print(qualificacoes);
+  docentes.forEach((d) => mapaDocentes[d.codigo] = d);
+  veiculos.forEach((v) => mapaVeiculos[v.sigla] = v);
+  for (int i = 0; i < qualificacoes.length; ++i){
+    if (mapaVeiculoQualis[qualificacoes[i].sigla] == null){
+      mapaVeiculoQualis[qualificacoes[i].sigla] = new List();
+      mapaVeiculoQualis[qualificacoes[i].sigla].add(qualificacoes[i]);
+    }
+    else  mapaVeiculoQualis[qualificacoes[i].sigla].add(qualificacoes[i]);
+  }
+  //qualificacoes.forEach((q) => mapaVeiculoQualis[q.sigla].add(q));
+  Comparator<Publicacao> compareTo = comparaPublicacao;
+  publicacoes.sort(compareTo);
+  //print("ordenou");
+  for (int i = 0; i < publicacoes.length; ++i){
+    var p = publicacoes[i];
+    String autores = "";
+    for (int j = 0; j < p.listaAutores.length; ++j){
+      if (j != p.listaAutores.length - 1)
+        autores += mapaDocentes[p.listaAutores[j]].nome + ", ";
+      else
+        autores += mapaDocentes[p.listaAutores[j]].nome;
+    }
+    String qualisA;
+    for(var i = 0; i < mapaVeiculoQualis[p.sigla].length; ++i){
+      if (mapaVeiculoQualis[p.sigla][i].ano == p.ano)
+        qualisA = mapaVeiculoQualis[p.sigla][i].qualis;
+    }
+    print("${p.ano};${p.sigla};${mapaVeiculos[p.sigla].nome};${qualisA};${mapaVeiculos[p.sigla].fatorImpacto.toStringAsFixed(3)};${p.titulo};${autores}");
+    //print("${p.titulo}");
+  }
+  //publicacoes.forEach((p) => print("${p.ano};${p.sigla};${mapaVeiculos[p.sigla].nome};${mapaVeiculoQualis[p.sigla]};${p.titulo};${p.listaAutores.forEach((f) => print("${mapaDocentes[f]} "))}"));
+
+  //print(regrasDePontuacao);
+  //print(publicacoes);
   // print(docentes);
-  //print(veiculos);
-  // List<dynamic> planDoc = [3,"nomeDocente","03/12/1990","01/10/1980","X"];
-  //List<dynamic> planVei = ["siglaVeiculo","nomeVeiculo","C","issn",1.20];
-  //List<dynamic> planPub = [1970,1,"siglaVeiculo","titulo",listaCodigos,1,2,"local",10,20];
-  //List<dynamic> planQua = [1970,"siglaVeiculo",listaPontos];
-  //List<dynamic> planReg = ["01/01/1980","01/01/1985",listaQualis,listaPontos,2.0,3,4];
-  
-  //------------------------------------------------------Como se fosse um arquivo! 
-  List<int> listaCodigos = [1,2,3]; //lista de codigos dos docentes
-  List<int> listaPontos = [10,5,1,0]; //lista de pontos dos qualis respectivos
-  List<String> listaQualis = ["A1","B2","B4","C"]; //qualis relacionados aos pontos acima
-  Map<String,int> mapaQualis = fazerMapa(listaQualis,listaPontos); //mapa com o valor de cada qualis
-  //-----------------------------------como se fosse 1 linha do arquivo
-  // Docente doc = Docente(1,"nomeDocente1","03/12/1990","01/10/1980","X");
-  // Docente doc1 = Docente(2,"nomeDocente2","03/12/1990","01/10/1980","X");
-  // Docente doc2 = Docente(3,"nomeDocente3","03/12/1990","01/10/1980","X");
-  // Docente doc3 = Docente(10,"nomeDocente10","03/12/1990","01/10/1980","X");
-  // docentes.add(doc);
-  // docentes.add(doc1);
-  // docentes.add(doc2);
-  // docentes.add(doc3);
-  //print("Docentes: \n$doc");
-  //-----------------------------------como se fosse 1 linha do arquivo
-  // Veiculo vei = Veiculo("siglaVeiculo","nomeVeiculo","C","issn",1.20);
-  // veiculos.add(vei);
-  //print("Veiculos: \n$vei");
-  //-----------------------------------como se fosse 1 linha do arquivo
-  // Publicacao pub = Publicacao(1970,1,2,3,"siglaVeiculo","titulo","local",listaCodigos);
-  // Publicacao pub1 = Publicacao(1970,1,2,3,"siglaVeiculo","titulo","local",listaCodigos);
-  // publicacoes.add(pub);
-  // publicacoes.add(pub1);
-  //print("Publicacoes: \n$pub");
-  //-----------------------------------como se fosse 1 linha do arquivo
-  Qualificacao qua = Qualificacao(1970,"siglaVeiculo",mapaQualis);
-  qualificacoes.add(qua);
-  //print("Qualificacoes: \n$qua");
-  //-----------------------------------como se fosse 1 linha do arquivo
-  RegrasDePontuacao reg = RegrasDePontuacao("01/01/1980","01/01/1985",listaQualis,listaPontos,2.0,3,4);
-  regrasDePontuacao.add(reg);
-  //print("Regras de Pontuacao: \n$reg");
-  //"Arquivo lido"
-  
-  //2 arquivos precisam ser gerados
-  //lista de publicacoes SEM ordernar
-  //relatorioListaDePublicacoes(docentes, veiculos, publicacoes, qualificacoes);
-  //estatisticas de publicacoes SEM ordenar
-  
-  
-  
-}
-//List<int> listaCodigos = [1,2,3,4,5,6];
-// List<Docente> docentes =  [10,"nomeDocente","03/12/1990","01/10/1980","X"];
-List<String> listaDocentes(List<int> listaCodigos, List<Docente> docentes){
-  List<String> listaNomeDocentes = new List<String>();
-  for (int i=0;i<listaCodigos.length;i++){
-    for (int j=0;j<docentes.length;j++){
-      if(listaCodigos[i]==docentes[j].codigo){
-        listaNomeDocentes.add(docentes[j].nome);
-      }
-    }
-  }
-  return listaNomeDocentes;
-}
-
-Veiculo retornaUmVeiculoDadaSigla(String siglaVeiculo, List<Veiculo> listaDeVeiculos){
-  for (int i=0;i<listaDeVeiculos.length;i++){
-    if(listaDeVeiculos[i].sigla==siglaVeiculo){
-      return listaDeVeiculos[i];
-    }
-  }
-  return null; 
-}
-
-Map<String,int> retornaMapaQualisDadaSigla(String siglaVeiculo, List<Qualificacao> qualificacoes){
-  for (int i=0;i<qualificacoes.length;i++){
-    if(qualificacoes[i].sigla==siglaVeiculo){
-      return qualificacoes[i].qualis;
-    }
-  }
-  return null; 
-}
-
-void relatorioListaDePublicacoes(List<Docente> docentes, List<Veiculo> veiculos, List<Publicacao> publicacoes, List<Qualificacao> qualificacoes){
-  for(int i=0;i<publicacoes.length;i++){
-    List<String> listaNomesDocentes = listaDocentes(publicacoes[i].listaAutores,docentes);    
-    Veiculo veiculo = retornaUmVeiculoDadaSigla(publicacoes[i].sigla,veiculos);    
-    Map<String,int> qualis = retornaMapaQualisDadaSigla(publicacoes[i].sigla, qualificacoes);
-    print("${publicacoes[i].ano};${veiculo.sigla};${veiculo.nome};$qualis;${veiculo.fatorImpacto};${publicacoes[i].titulo};$listaNomesDocentes");
-    
-    //listaNomesDocentes.forEach((i) => print(i));
-  }
-}
-
-Map<String,int> fazerMapa(listaQualis,listaPontos){
-  
-  List<String> listaPadrao = ["A1","A2","B1","B2","B3","B4","C"];
-  int aux;
-  //["A1","B2","B4","C"];
-  //[10,5,1,0];  
-  
-  //print(listaQualis);
-  //print(listaPontos);
-  for (int i=0; i< listaQualis.length;i++) {
-    if (listaQualis[i] != listaPadrao[i]){
-      listaQualis.insert(i,"N/A");
-      listaPontos.insert(i,0);
-    }
-    if(listaQualis[i]=="N/A"){
-      listaQualis[i] = listaPadrao[i];     
-    }    
-  }
-  for(int i=0;i<listaPontos.length;i++){
-    if(listaPontos[i]!=0){
-      aux = listaPontos[i];
-    }else{
-      listaPontos[i] = aux;
-    }
-  }
-  //print(listaQualis);
-  //print(listaPontos);    
-  
-  Map<String,int> mapaQualis = new Map.fromIterables(listaPadrao,listaPontos);
-  
-  //print(mapaQualis);
-  return mapaQualis; 
+  //print(veiculos);  
 }
