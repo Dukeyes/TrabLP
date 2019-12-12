@@ -4,6 +4,7 @@ import 'Publicacao.dart';
 import 'Qualificacao.dart';
 import 'RegrasDePontuacao.dart';
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 import 'dart:convert';
 
@@ -32,6 +33,10 @@ List<T> le<T>(String arquivo, String type){
   List<String> ls = file.readAsLinesSync();
   for (var i = 1; i < ls.length; i++) {
     List<String> element = ls[i].split(';');
+    for(var j = 0; j < element.length; ++j){
+      element[j] = element[j].trim();
+    }
+    //print(element);
     var t;
     if (type == "d") t = new Docente.fromDocente(element);
     if (type == "v") t = new Veiculo.fromVeiculo(element);
@@ -61,8 +66,11 @@ int comparaPublicacao(Publicacao a, Publicacao b){
     if (mapaVeiculoQualis[b.sigla][i].ano == b.ano)
       qualisB = mapaVeiculoQualis[b.sigla][i].qualis;
   }
-  
+  //print(a);
+  //print(b);
+  //print(qualisB);
   int res = qualisA.compareTo(qualisB);
+
   if (res == 0){
     if (a.ano.compareTo(b.ano) == 0){
       if (a.sigla.compareTo(b.sigla) == 0)
@@ -73,6 +81,8 @@ int comparaPublicacao(Publicacao a, Publicacao b){
   }
   return res; 
 }
+
+
 
 void main(List<String> args){
   
@@ -103,8 +113,11 @@ void main(List<String> args){
     else  mapaVeiculoQualis[qualificacoes[i].sigla].add(qualificacoes[i]);
   }
   //qualificacoes.forEach((q) => mapaVeiculoQualis[q.sigla].add(q));
+  File listaPublicacoes = File('2-publicacoes.csv');
+  File estatisticas = File('3-estatisticas.csv');
   Comparator<Publicacao> compareTo = comparaPublicacao;
   publicacoes.sort(compareTo);
+  String contents = "";
   //print("ordenou");
   for (int i = 0; i < publicacoes.length; ++i){
     var p = publicacoes[i];
@@ -120,9 +133,37 @@ void main(List<String> args){
       if (mapaVeiculoQualis[p.sigla][i].ano == p.ano)
         qualisA = mapaVeiculoQualis[p.sigla][i].qualis;
     }
-    print("${p.ano};${p.sigla};${mapaVeiculos[p.sigla].nome};${qualisA};${mapaVeiculos[p.sigla].fatorImpacto.toStringAsFixed(3)};${p.titulo};${autores}");
+    contents += "${p.ano};${p.sigla};${mapaVeiculos[p.sigla].nome};${qualisA};${mapaVeiculos[p.sigla].fatorImpacto.toStringAsFixed(3)};${p.titulo};${autores}\n";
+    //listaPublicacoes.writeAsStringSync("${p.ano};${p.sigla};${mapaVeiculos[p.sigla].nome};${qualisA};${mapaVeiculos[p.sigla].fatorImpacto.toStringAsFixed(3)};${p.titulo};${autores}");
+    //print("${p.ano};${p.sigla};${mapaVeiculos[p.sigla].nome};${qualisA};${mapaVeiculos[p.sigla].fatorImpacto.toStringAsFixed(3)};${p.titulo};${autores}");
     //print("${p.titulo}");
   }
+  listaPublicacoes.writeAsStringSync(contents);
+  SplayTreeMap<String, List<Publicacao>> mapaQualisEstatisticas = SplayTreeMap(); 
+  for(var i = 0; i < publicacoes.length; ++i){
+    var l = mapaVeiculoQualis[publicacoes[i].sigla];
+    String qualis;
+    for (int j = 0; j < l.length; j++){
+      if (l[j].ano == publicacoes[i].ano)
+        qualis = l[j].qualis;
+    }
+    //print(qualis);
+    if (mapaQualisEstatisticas[qualis] == null){
+      mapaQualisEstatisticas[qualis] = List();
+
+    }
+    mapaQualisEstatisticas[qualis].add(publicacoes[i]);
+  }
+  //print(mapaQualisEstatisticas);
+  contents = "";
+  mapaQualisEstatisticas.forEach((key, value) {
+    int numArtigos = value.length, numDocentes = 0;
+    value.forEach((p) => numDocentes += p.listaAutores.length);
+    double res  = numArtigos/numDocentes;
+    contents += "${key};${numArtigos};${res.toStringAsFixed(2)}\n"; 
+    //print("${key};${numArtigos};${res}");
+  });
+  estatisticas.writeAsStringSync(contents);
   //publicacoes.forEach((p) => print("${p.ano};${p.sigla};${mapaVeiculos[p.sigla].nome};${mapaVeiculoQualis[p.sigla]};${p.titulo};${p.listaAutores.forEach((f) => print("${mapaDocentes[f]} "))}"));
 
   //print(regrasDePontuacao);
