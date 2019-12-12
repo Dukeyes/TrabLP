@@ -59,11 +59,11 @@ int comparaPublicacao(Publicacao a, Publicacao b){
   String qualisA, qualisB;
   //print(a.sigla); print(b.sigla);
   for(var i = 0; i < mapaVeiculoQualis[a.sigla].length; ++i){
-    if (mapaVeiculoQualis[a.sigla][i].ano == a.ano)
+    //if (mapaVeiculoQualis[a.sigla][i].ano == a.ano)
       qualisA = mapaVeiculoQualis[a.sigla][i].qualis;
   }
   for(var i = 0; i < mapaVeiculoQualis[b.sigla].length; ++i){
-    if (mapaVeiculoQualis[b.sigla][i].ano == b.ano)
+    //if (mapaVeiculoQualis[b.sigla][i].ano == b.ano)
       qualisB = mapaVeiculoQualis[b.sigla][i].qualis;
   }
   //print(a);
@@ -144,12 +144,14 @@ void main(List<String> args){
     var l = mapaVeiculoQualis[publicacoes[i].sigla];
     String qualis;
     for (int j = 0; j < l.length; j++){
-      if (l[j].ano == publicacoes[i].ano)
+      //if (l[j].ano == publicacoes[i].ano)
         qualis = l[j].qualis;
     }
     //print(qualis);
-    if (mapaQualisEstatisticas[qualis] == null){
-      mapaQualisEstatisticas[qualis] = List();
+    if (!mapaQualisEstatisticas.containsKey(qualis)){
+      List<Publicacao> lp = List();
+      //print(qualis);
+      mapaQualisEstatisticas[qualis] = lp;
 
     }
     mapaQualisEstatisticas[qualis].add(publicacoes[i]);
